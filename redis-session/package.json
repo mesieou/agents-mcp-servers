@@ -4,12 +4,22 @@
   "description": "A scalable MCP Redis server with CRUD operations for info, sessions, and messages for agents",
   "type": "module",
   "main": "dist/server.js",
+  "bin": {
+    "mcp-redis-server": "./dist/server.js"
+  },
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc",
     "start": "node dist/server.js",
     "dev": "ts-node src/server.ts",
     "dev:watch": "ts-node --watch src/server.ts",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "postinstall": "npm run build",
+    "prepare": "npm run build"
   },
   "keywords": [
     "mcp",

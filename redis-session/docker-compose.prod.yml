@@ -1,0 +1,69 @@
+version: '3.8'
+
+services:
+  mcp-redis-server:
+    image: node:18-alpine
+    container_name: mcp-redis-server-prod
+    working_dir: /app
+    command: sh -c "npm install -g mcp-redis-server@latest && mcp-redis-server"
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+      - REDIS_DB=0
+      - NODE_ENV=production
+      - LOG_LEVEL=info
+      - CACHE_TTL=3600
+      - BATCH_SIZE=100
+      - MAX_CONNECTIONS=10
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "process.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    stdin_open: true
+    tty: true
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis-prod
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes ${REDIS_PASSWORD:+--requirepass $REDIS_PASSWORD}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  # Optional: Redis Commander for management
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: redis-commander-prod
+    depends_on:
+      - redis
+    environment:
+      - REDIS_HOSTS=local:redis:6379${REDIS_PASSWORD:+:$REDIS_PASSWORD}
+    ports:
+      - "8081:8081"
+    restart: unless-stopped
+    profiles:
+      - tools
+
+volumes:
+  redis_data:
+    driver: local
+
+# Usage:
+# 1. Create .env file: echo "REDIS_PASSWORD=your-secure-password" > .env
+# 2. Start: docker-compose -f docker-compose.prod.yml up -d
+# 3. With Redis Commander: docker-compose -f docker-compose.prod.yml --profile tools up -d
+# 4. Logs: docker-compose -f docker-compose.prod.yml logs -f
+# 5. Stop: docker-compose -f docker-compose.prod.yml down

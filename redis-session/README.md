@@ -2,6 +2,60 @@
 
 A scalable and efficient MCP (Model Context Protocol) Redis server that provides comprehensive CRUD operations for info, sessions, and messages with advanced features like batch operations, smart caching, optimized keys, and lazy loading.
 
+## 🚀 Quick Start
+
+### For End Users
+
+**Install globally:**
+```bash
+npm install -g mcp-redis-server
+```
+
+**Set up Redis (choose one):**
+```bash
+# Local Redis
+brew install redis && brew services start redis  # macOS
+sudo apt install redis-server && sudo systemctl start redis  # Ubuntu
+
+# Docker Redis
+docker run -d -p 6379:6379 redis:7-alpine
+
+# Or use any cloud Redis (AWS ElastiCache, Redis Cloud, etc.)
+```
+
+**Run the server:**
+```bash
+export REDIS_HOST=localhost
+export REDIS_PORT=6379
+export REDIS_PASSWORD=""  # Optional
+mcp-redis-server
+```
+
+**Or with MCP client config:**
+```json
+{
+  "mcpServers": {
+    "redis": {
+      "command": "mcp-redis-server",
+      "env": {
+        "REDIS_HOST": "localhost",
+        "REDIS_PORT": "6379",
+        "REDIS_PASSWORD": ""
+      }
+    }
+  }
+}
+```
+
+### For Production (One-Command Deploy)
+
+**Docker Compose with everything included:**
+```bash
+curl -O https://raw.githubusercontent.com/yourusername/mcp-redis-server/main/docker-compose.prod.yml
+echo "REDIS_PASSWORD=your-secure-password" > .env
+docker-compose -f docker-compose.prod.yml up -d
+```
+
 ## 🚀 Features
 
 ### Core CRUD Operations
@@ -21,81 +75,54 @@ A scalable and efficient MCP (Model Context Protocol) Redis server that provides
 - **Data Cleanup**: Automatic cleanup of expired data
 - **Statistics**: Comprehensive data statistics and monitoring
 
-## 📁 Project Structure
+## 📋 Available Tools
 
-```
-mcp-redis-server/
-├── docker-compose.yml          # Docker Compose configuration
-├── Dockerfile                  # Docker container definition
-├── package.json               # Node.js dependencies and scripts
-├── tsconfig.json              # TypeScript configuration
-├── env.example                # Environment variables template
-├── README.md                  # This file
-└── src/
-    ├── server.ts              # Main MCP server implementation
-    ├── redis-client.ts        # Redis client with connection management
-    ├── types.ts               # TypeScript type definitions
-    └── tools/
-        ├── info-crud.ts       # Info CRUD operations
-        ├── session-crud.ts    # Session CRUD operations
-        ├── message-crud.ts    # Message CRUD operations
-        └── batch-operations.ts # Batch operation utilities
-```
+The server provides 37 MCP tools organized into categories:
 
-## 🛠️ Installation
+### Info CRUD (8 tools)
+- `create_info` - Create info items with categories
+- `get_info` - Retrieve specific info items
+- `list_info` - List items with filtering
+- `update_info` - Update existing items
+- `delete_info` - Delete specific items
+- `delete_category` - Delete entire categories
+- `search_info` - Search by query string
+- `get_category_info` - Get category statistics
 
-### Prerequisites
-- Node.js 18+
-- Redis 6+
-- Docker (optional, for containerized deployment)
+### Session CRUD (9 tools)
+- `create_session` - Create sessions with metadata
+- `get_session` - Retrieve session data
+- `list_sessions` - List with patterns/limits
+- `update_session` - Update session metadata
+- `delete_session` - Delete sessions and messages
+- `search_sessions` - Search sessions by query
+- `get_active_sessions` - Get recently active sessions
+- `get_session_stats` - Session statistics
+- `cleanup_expired_sessions` - Clean up expired sessions
 
-### Local Development
+### Message CRUD (9 tools)
+- `create_message` - Create messages in sessions
+- `get_message` - Retrieve specific messages
+- `get_messages` - Get messages with pagination
+- `search_messages` - Search message content
+- `update_message` - Update message content/metadata
+- `delete_message` - Delete specific messages
+- `delete_all_messages` - Delete all session messages
+- `get_message_count` - Count messages in session
+- `get_recent_messages` - Get recent messages by time
 
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd mcp-redis-server
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Set up environment variables**
-   ```bash
-   cp env.example .env
-   # Edit .env with your Redis configuration
-   ```
-
-4. **Start Redis server**
-   ```bash
-   redis-server
-   ```
-
-5. **Build and run the application**
-   ```bash
-   npm run build
-   npm start
-   ```
-
-### Docker Deployment
-
-1. **Using Docker Compose (Recommended)**
-   ```bash
-   docker-compose up -d
-   ```
-
-   This will start:
-   - Redis server
-   - MCP Redis Server
-   - Redis Commander (web UI) on port 8081
-
-2. **Manual Docker build**
-   ```bash
-   docker build -t mcp-redis-server .
-   docker run -d --name mcp-redis-server mcp-redis-server
-   ```
+### Batch Operations (11 tools)
+- `execute_batch_operations` - Execute multiple operations
+- `bulk_create_info` - Create multiple info items
+- `bulk_create_sessions` - Create multiple sessions
+- `bulk_create_messages` - Create multiple messages
+- `bulk_delete_info` - Delete multiple info items
+- `bulk_delete_sessions` - Delete multiple sessions
+- `bulk_update_info` - Update multiple info items
+- `get_batch_stats` - Get data statistics
+- `cleanup_expired_data` - Clean up expired data
+- `get_redis_info` - Redis connection status
+- `clear_cache` - Clear in-memory cache
 
 ## 🔧 Configuration
 
@@ -107,8 +134,6 @@ mcp-redis-server/
 | `REDIS_PORT` | Redis server port | `6379` |
 | `REDIS_PASSWORD` | Redis password (optional) | - |
 | `REDIS_DB` | Redis database number | `0` |
-| `MCP_SERVER_NAME` | MCP server name | `mcp-redis-server` |
-| `MCP_SERVER_VERSION` | MCP server version | `1.0.0` |
 | `CACHE_TTL` | Cache TTL in seconds | `3600` |
 | `BATCH_SIZE` | Default batch size | `100` |
 | `MAX_CONNECTIONS` | Max Redis connections | `10` |
@@ -116,274 +141,241 @@ mcp-redis-server/
 
 ### Redis Key Patterns
 
-The server uses optimized key patterns for maximum efficiency:
-
+The server uses optimized key patterns:
 - **Info**: `i:category:key` (e.g., `i:business:hours`)
 - **Sessions**: `s:sessionId` (e.g., `s:123`)
 - **Messages**: `s:sessionId:m:messageId` (e.g., `s:123:m:msg_123`)
 - **Categories**: `c:category` (e.g., `c:business`)
 
-## 📚 API Reference
+## 💻 Development Setup
 
-### Info CRUD Operations
+### Prerequisites
+- Node.js 18+
+- Redis 6+
+- Docker (optional)
 
-#### `create_info`
-Create a new info item with category, key, data and optional TTL.
+### Local Development
 
-**Parameters:**
-- `category` (string): Category for the info item
-- `key` (string): Key for the info item
-- `data` (string): Data content for the info item
-- `ttl` (number, optional): Time to live in seconds
+1. **Clone and install:**
+   ```bash
+   git clone <repository-url>
+   cd mcp-redis-server
+   npm install
+   ```
 
-**Example:**
-```json
-{
-  "category": "business",
-  "key": "hours",
-  "data": "9 AM - 5 PM",
-  "ttl": 3600
-}
+2. **Set up environment:**
+   ```bash
+   cp env.example .env
+   # Edit .env with your Redis configuration
+   ```
+
+3. **Start Redis:**
+   ```bash
+   redis-server  # or docker run -d -p 6379:6379 redis:7-alpine
+   ```
+
+4. **Build and run:**
+   ```bash
+   npm run build
+   npm start
+   ```
+
+### Docker Development
+
+```bash
+# Start everything (Redis + MCP server + Redis Commander)
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Test the server
+./quick-test.sh
 ```
 
-#### `get_info`
-Get an info item by category and key.
+### Testing
 
-**Parameters:**
-- `category` (string): Category of the info item
-- `key` (string): Key of the info item
+```bash
+# Run the comprehensive test script
+./quick-test.sh
 
-#### `list_info`
-List info items with optional category filter and pattern matching.
-
-**Parameters:**
-- `category` (string, optional): Filter by category
-- `pattern` (string, optional): Pattern to match
-
-#### `update_info`
-Update an existing info item.
-
-**Parameters:**
-- `category` (string): Category of the info item
-- `key` (string): Key of the info item
-- `data` (string): New data content
-- `ttl` (number, optional): New TTL in seconds
-
-#### `delete_info`
-Delete an info item.
-
-**Parameters:**
-- `category` (string): Category of the info item
-- `key` (string): Key of the info item
-
-#### `delete_category`
-Delete all info items in a category.
-
-**Parameters:**
-- `category` (string): Category to delete
-
-### Session CRUD Operations
-
-#### `create_session`
-Create a new session with optional metadata and TTL.
-
-**Parameters:**
-- `sessionId` (string): Unique session identifier
-- `metadata` (object, optional): Session metadata
-- `ttl` (number, optional): Time to live in seconds
-
-**Example:**
-```json
-{
-  "sessionId": "user_123_session",
-  "metadata": {
-    "userId": "123",
-    "userAgent": "Mozilla/5.0...",
-    "ipAddress": "192.168.1.1"
-  },
-  "ttl": 7200
-}
+# Or test individual components
+echo '{"jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": {}}' | timeout 3s node dist/server.js
 ```
 
-#### `get_session`
-Get a session by ID.
+## 🏭 Production Deployment
 
-**Parameters:**
-- `sessionId` (string): Session identifier
+### Option 1: Docker Compose (Recommended)
 
-#### `list_sessions`
-List sessions with optional pattern and limit.
+**Complete production setup:**
+```bash
+# Download production config
+curl -O https://raw.githubusercontent.com/yourusername/mcp-redis-server/main/docker-compose.prod.yml
 
-**Parameters:**
-- `pattern` (string, optional): Pattern to match session IDs
-- `limit` (number, optional): Maximum number of sessions to return
+# Set secure password
+echo "REDIS_PASSWORD=your-secure-password" > .env
 
-#### `update_session`
-Update session metadata.
+# Deploy
+docker-compose -f docker-compose.prod.yml up -d
 
-**Parameters:**
-- `sessionId` (string): Session identifier
-- `updates` (object): Updates to apply to session metadata
-
-#### `delete_session`
-Delete a session and all its messages.
-
-**Parameters:**
-- `sessionId` (string): Session identifier
-
-### Message CRUD Operations
-
-#### `create_message`
-Create a new message in a session.
-
-**Parameters:**
-- `sessionId` (string): Session identifier
-- `role` (string): Message role (e.g., user, assistant)
-- `content` (string): Message content
-- `metadata` (object, optional): Additional metadata
-
-**Example:**
-```json
-{
-  "sessionId": "user_123_session",
-  "role": "user",
-  "content": "Hello, how can I help you?",
-  "metadata": {
-    "timestamp": "2024-01-01T12:00:00Z",
-    "source": "web"
-  }
-}
+# Optional: Include Redis Commander for management
+docker-compose -f docker-compose.prod.yml --profile tools up -d
 ```
 
-#### `get_message`
-Get a specific message by session and message ID.
+### Option 2: PM2 Process Manager
 
-**Parameters:**
-- `sessionId` (string): Session identifier
-- `messageId` (string): Message identifier
+```bash
+# Install PM2 and server
+npm install -g pm2 mcp-redis-server
 
-#### `get_messages`
-Get messages from a session with pagination.
+# Create ecosystem file
+cat > ecosystem.config.js << EOF
+module.exports = {
+  apps: [{
+    name: 'mcp-redis-server',
+    script: 'mcp-redis-server',
+    instances: 1,
+    autorestart: true,
+    env: {
+      NODE_ENV: 'production',
+      REDIS_HOST: 'localhost',
+      REDIS_PORT: 6379,
+      REDIS_PASSWORD: 'your-password'
+    }
+  }]
+};
+EOF
 
-**Parameters:**
-- `sessionId` (string): Session identifier
-- `limit` (number, optional): Maximum number of messages
-- `offset` (number, optional): Number of messages to skip
-
-#### `search_messages`
-Search messages in a session by content.
-
-**Parameters:**
-- `sessionId` (string): Session identifier
-- `query` (string): Search query
-- `limit` (number, optional): Maximum number of results
-
-#### `update_message`
-Update a message content or metadata.
-
-**Parameters:**
-- `sessionId` (string): Session identifier
-- `messageId` (string): Message identifier
-- `updates` (object): Updates to apply
-
-#### `delete_message`
-Delete a specific message.
-
-**Parameters:**
-- `sessionId` (string): Session identifier
-- `messageId` (string): Message identifier
-
-#### `delete_all_messages`
-Delete all messages in a session.
-
-**Parameters:**
-- `sessionId` (string): Session identifier
-
-### Batch Operations
-
-#### `execute_batch_operations`
-Execute multiple operations in a single batch for efficiency.
-
-**Parameters:**
-- `operations` (array): Array of batch operations to execute
-
-**Operation Object:**
-```json
-{
-  "operation": "create|update|delete",
-  "type": "info|session|message",
-  "key": "identifier",
-  "data": {},
-  "ttl": 3600
-}
+# Start and save
+pm2 start ecosystem.config.js
+pm2 save
+pm2 startup
 ```
 
-#### `bulk_create_info`
-Create multiple info items efficiently.
+### Option 3: Systemd Service (Linux)
 
-**Parameters:**
-- `items` (array): Array of info items to create
+```bash
+# Install globally
+npm install -g mcp-redis-server
 
-#### `bulk_create_sessions`
-Create multiple sessions efficiently.
+# Create service file
+sudo tee /etc/systemd/system/mcp-redis-server.service << EOF
+[Unit]
+Description=MCP Redis Server
+After=network.target redis.service
 
-**Parameters:**
-- `sessions` (array): Array of sessions to create
+[Service]
+Type=simple
+User=mcp
+Environment=NODE_ENV=production
+Environment=REDIS_HOST=localhost
+Environment=REDIS_PORT=6379
+Environment=REDIS_PASSWORD=your-password
+ExecStart=/usr/bin/mcp-redis-server
+Restart=always
 
-#### `bulk_create_messages`
-Create multiple messages efficiently.
+[Install]
+WantedBy=multi-user.target
+EOF
 
-**Parameters:**
-- `messages` (array): Array of messages to create
+# Enable and start
+sudo systemctl enable mcp-redis-server
+sudo systemctl start mcp-redis-server
+```
 
-### Utility Operations
+### Option 4: Cloud Platforms
 
-#### `get_redis_info`
-Get Redis server information and connection status.
+**Railway:**
+```bash
+npm install -g @railway/cli
+railway login
+railway init
+railway up
+# Set REDIS_HOST, REDIS_PORT, REDIS_PASSWORD in Railway dashboard
+```
 
-#### `clear_cache`
-Clear the in-memory cache.
+**Render/Fly.io/DigitalOcean:**
+- Connect your GitHub repo
+- Add Redis addon/service
+- Set environment variables from Redis addon
+- Deploy
 
-**Parameters:**
-- `pattern` (string, optional): Pattern to match cache keys
+## 🔒 Production Security
 
-#### `get_batch_stats`
-Get statistics about stored data.
+### Redis Security
+```bash
+# redis.conf
+requirepass your-strong-password
+bind 127.0.0.1
+protected-mode yes
+maxmemory 256mb
+maxmemory-policy allkeys-lru
+```
 
-#### `cleanup_expired_data`
-Clean up expired data from Redis.
+### Environment Variables
+```bash
+# Required
+REDIS_HOST=your-redis-host
+REDIS_PORT=6379
+REDIS_PASSWORD=strong-password-here
+REDIS_DB=0
 
-## 🔄 Performance Features
+# Optional
+NODE_ENV=production
+LOG_LEVEL=info
+```
 
-### Smart Caching
-- **In-memory cache** with TTL-based invalidation
-- **Frequently accessed data** cached automatically
-- **Cache cleanup** runs every 5 minutes
-- **Pattern-based cache clearing** for targeted invalidation
+### Firewall Rules
+```bash
+# Only allow Redis from MCP server
+ufw allow from YOUR_MCP_SERVER_IP to any port 6379
+ufw deny 6379
+```
 
-### Batch Operations
-- **Redis pipelines** for multiple operations
-- **Single network round trips** for bulk operations
-- **Atomic operations** ensuring data consistency
-- **Configurable batch sizes** for optimal performance
+## 📊 Monitoring & Maintenance
 
-### Optimized Key Patterns
-- **Short key names** reducing memory usage
-- **Hierarchical organization** for efficient scanning
-- **Index structures** for fast lookups
-- **Pattern matching** for flexible queries
+### Health Checks
+```bash
+# Check server status
+docker-compose ps  # Docker
+pm2 status         # PM2
+systemctl status mcp-redis-server  # Systemd
 
-### Lazy Loading
-- **Pagination support** for large datasets
-- **On-demand retrieval** reducing initial load times
-- **Configurable limits** preventing memory issues
-- **Efficient data structures** for quick access
+# Check Redis
+redis-cli ping
+```
 
-## 🚀 Usage Examples
+### Logs
+```bash
+# View logs
+docker-compose logs -f mcp-redis-server  # Docker
+pm2 logs mcp-redis-server                # PM2
+journalctl -u mcp-redis-server -f        # Systemd
+```
+
+### Redis Commander Web UI
+Access at `http://localhost:8081` to:
+- Browse Redis keys and values
+- Monitor memory usage
+- Execute Redis commands
+- View real-time statistics
+
+### Updates
+```bash
+# Update server
+npm update -g mcp-redis-server
+
+# Restart service
+docker-compose restart mcp-redis-server  # Docker
+pm2 restart mcp-redis-server            # PM2
+systemctl restart mcp-redis-server      # Systemd
+```
+
+## 📚 Usage Examples
 
 ### Basic Info Management
 ```javascript
-// Create business hours info
+// Create business hours
 await create_info({
   category: "business",
   key: "hours",
@@ -400,7 +392,7 @@ const hours = await get_info({
 
 ### Session Management
 ```javascript
-// Create a user session
+// Create user session
 await create_session({
   sessionId: "user_123_session",
   metadata: {
@@ -410,7 +402,7 @@ await create_session({
   ttl: 7200
 });
 
-// Update session metadata
+// Update session
 await update_session({
   sessionId: "user_123_session",
   updates: {
@@ -421,20 +413,20 @@ await update_session({
 
 ### Message Handling
 ```javascript
-// Create a conversation
+// Create conversation
 await create_message({
   sessionId: "user_123_session",
   role: "user",
-  content: "Hello, I need help with my order"
+  content: "Hello, I need help"
 });
 
 await create_message({
   sessionId: "user_123_session",
   role: "assistant",
-  content: "I'd be happy to help you with your order. Can you provide your order number?"
+  content: "I'd be happy to help you!"
 });
 
-// Get recent messages
+// Get messages
 const messages = await get_messages({
   sessionId: "user_123_session",
   limit: 10
@@ -452,7 +444,7 @@ await bulk_create_info({
   ]
 });
 
-// Execute mixed batch operations
+// Mixed batch operations
 await execute_batch_operations({
   operations: [
     {
@@ -471,36 +463,81 @@ await execute_batch_operations({
 });
 ```
 
-## 🔍 Monitoring and Maintenance
+## 🔄 Performance Features
 
-### Redis Commander
-Access the web UI at `http://localhost:8081` to:
-- Browse Redis keys and values
-- Monitor memory usage
-- Execute Redis commands
-- View real-time statistics
+### Smart Caching
+- In-memory cache with TTL-based invalidation
+- Frequently accessed data cached automatically
+- Cache cleanup runs every 5 minutes
+- Pattern-based cache clearing
 
-### Health Checks
-The server includes built-in health checks:
-- Redis connection status
-- Memory usage monitoring
-- Cache performance metrics
-- Error rate tracking
+### Batch Operations
+- Redis pipelines for multiple operations
+- Single network round trips for bulk operations
+- Atomic operations ensuring data consistency
+- Configurable batch sizes
 
-### Data Cleanup
-Automatic cleanup features:
-- **Expired data removal** from Redis
-- **Cache invalidation** for stale data
-- **Session cleanup** for inactive sessions
-- **Statistics tracking** for monitoring
+### Optimized Key Patterns
+- Short key names reducing memory usage
+- Hierarchical organization for efficient scanning
+- Index structures for fast lookups
+- Pattern matching for flexible queries
+
+### Lazy Loading
+- Pagination support for large datasets
+- On-demand retrieval reducing initial load times
+- Configurable limits preventing memory issues
+- Efficient data structures for quick access
+
+## 📦 Publishing (For Developers)
+
+### NPM Publishing
+
+1. **Setup:**
+   ```bash
+   npm login  # or npm adduser
+   ```
+
+2. **Publish:**
+   ```bash
+   npm run build
+   npm publish
+   ```
+
+3. **Updates:**
+   ```bash
+   npm version patch  # or minor, major
+   npm publish
+   ```
+
+### Docker Hub
+
+```bash
+# Build and push
+docker build -t yourusername/mcp-redis-server:latest .
+docker push yourusername/mcp-redis-server:latest
+```
+
+## 📋 Production Checklist
+
+- [ ] Redis secured with password
+- [ ] Environment variables configured
+- [ ] Process manager setup (PM2/systemd/Docker)
+- [ ] Health checks configured
+- [ ] Logs rotation setup
+- [ ] Monitoring in place
+- [ ] Backups configured for Redis
+- [ ] Firewall rules applied
+- [ ] SSL/TLS if exposing externally
+- [ ] Resource limits set
 
 ## 🛡️ Security Considerations
 
-- **Non-root container** user for enhanced security
-- **Environment variable** configuration for sensitive data
-- **Redis authentication** support
-- **Input validation** on all operations
-- **Error handling** without data exposure
+- Non-root container user for enhanced security
+- Environment variable configuration for sensitive data
+- Redis authentication support
+- Input validation on all operations
+- Error handling without data exposure
 
 ## 🤝 Contributing
 
@@ -518,14 +555,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 For support and questions:
 - Create an issue in the repository
-- Check the documentation
-- Review the Redis Commander interface
+- Check the Redis Commander interface at http://localhost:8081
 - Monitor server logs for debugging
-
-## 🔄 Version History
-
-- **v1.0.0** - Initial release with full CRUD operations, batch processing, and caching
-- **Future versions** will include additional features like data encryption, advanced analytics, and integration with other MCP servers
 
 ---
 
