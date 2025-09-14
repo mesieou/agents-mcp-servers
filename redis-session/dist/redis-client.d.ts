@@ -1,0 +1,40 @@
+import { RedisConfig, CacheConfig } from './types.js';
+export declare class RedisClient {
+    private client;
+    private config;
+    private cacheConfig;
+    private cache;
+    private connected;
+    constructor(config: RedisConfig, cacheConfig: CacheConfig);
+    private setupEventHandlers;
+    connect(): Promise<void>;
+    disconnect(): Promise<void>;
+    isConnected(): boolean;
+    get(key: string): Promise<string | null>;
+    set(key: string, value: string, ttl?: number): Promise<void>;
+    del(key: string): Promise<number>;
+    exists(key: string): Promise<boolean>;
+    expire(key: string, seconds: number): Promise<boolean>;
+    ttl(key: string): Promise<number>;
+    hget(key: string, field: string): Promise<string | undefined>;
+    hset(key: string, field: string, value: string): Promise<number>;
+    hgetall(key: string): Promise<Record<string, string>>;
+    hdel(key: string, field: string): Promise<number>;
+    lpush(key: string, ...values: string[]): Promise<number>;
+    rpush(key: string, ...values: string[]): Promise<number>;
+    lrange(key: string, start: number, stop: number): Promise<string[]>;
+    llen(key: string): Promise<number>;
+    lrem(key: string, count: number, value: string): Promise<number>;
+    sadd(key: string, ...members: string[]): Promise<number>;
+    smembers(key: string): Promise<string[]>;
+    srem(key: string, ...members: string[]): Promise<number>;
+    keys(pattern: string): Promise<string[]>;
+    pipeline(): Promise<any>;
+    setCache<T>(key: string, data: T, ttl?: number): void;
+    getCache<T>(key: string): T | null;
+    clearCache(pattern?: string): void;
+    cleanupCache(): void;
+    private ensureConnected;
+    getClient(): any;
+}
+//# sourceMappingURL=redis-client.d.ts.map
